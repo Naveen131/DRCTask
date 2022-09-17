@@ -1,4 +1,5 @@
 from http.client import BAD_REQUEST
+from rest_framework.authtoken.models import Token
 
 from django.shortcuts import render
 from rest_framework import generics
@@ -8,8 +9,9 @@ from rest_framework.serializers import Serializer
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.utils.serializer_helpers import ReturnList
 
-from .models import User
-from .serializers import UserSerializer, UserViewSerializer
+from .models import User, MobileOtp
+from .serializers import UserSerializer, UserViewSerializer, \
+    MobileOtpSerializer, LoginSerializer, VerifyOtpserializer
 
 
 # Create your views here.
@@ -179,3 +181,72 @@ class UserRegisterView(generics.CreateAPIView):
 
         return APIResponse(data, 200)
 
+
+class LoginView(generics.CreateAPIView):
+    serializer_class = LoginSerializer
+    permission_classes = (AllowAny,)
+    queryset = User.objects.all()
+
+    def get_object(self, mobile):
+        user_obj = User.objects.get(mobile=mobile)
+        return user_obj
+
+    def post(self, request, *args, **kwargs):
+
+        user_obj = self.get_object(request.data['mobile'])
+        serializer = self.serializer_class(data=request.data,
+                                           context={"user_obj": user_obj})
+
+        if not serializer.is_valid():
+            return APIErrorResponse(data=serializer.errors, message=BAD_REQUEST,
+                                    status=HTTP_400_BAD_REQUEST
+                                    )
+        try:
+            instance = serializer.create(serializer.validated_data, user_obj)
+
+        except Exception as err:
+            return APIErrorResponse(message=err.args[0], status=HTTP_400_BAD_REQUEST,)
+        response = MobileOtpSerializer(instance).data
+        return APIResponse(response, 200)
+
+
+class VerifyOtpView(generics.RetrieveAPIView):
+    queryset = MobileOtp.objects.all()
+    serializer_class = VerifyOtpserializer
+    permission_classes = (AllowAny,)
+
+    def check_otp(self, validated_data):
+
+        user_obj = User.objects.get(mobile=validated_data['mobile'])
+
+        otp = user_obj.otp.all().last()
+        if validated_data['otp'] == otp.otp:
+            user_obj.otp_attempt_time = None
+            user_obj.save()
+            return True, user_obj
+        return False, user_obj
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+
+        serializer = self.serializer_class(data=data)
+
+        if not serializer.is_valid():
+            return APIErrorResponse(data=serializer.errors, message=BAD_REQUEST,
+                                    status=HTTP_400_BAD_REQUEST
+                                    )
+
+        validated_data = serializer.validated_data
+        try:
+            resp, user_obj = self.check_otp(data)
+
+        except Exception as err:
+            return APIErrorResponse(message=err.args[0], status=HTTP_400_BAD_REQUEST)
+
+        if not resp:
+            data = {"message": "Invalid OTP"}
+        else:
+            token = Token.objects.create(user=user_obj)
+            data = {"message": "success", "token": token.key}
+
+        return APIResponse(data, 200)

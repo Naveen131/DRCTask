@@ -1,10 +1,10 @@
-from datetime import datetime
+from django.utils import timezone
+from rest_framework.authtoken.models import Token
 
 from django.db import models
 from django.core.mail import send_mail
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.base_user import AbstractBaseUser
-
 from django.contrib.auth.base_user import BaseUserManager
 
 
@@ -37,6 +37,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    mobile = models.CharField(max_length=12, unique=True)
     username = models.CharField('username', max_length=30, unique=True)
     primary_email = models.EmailField('email address', unique=True)
     alternate_email = models.EmailField('alternate email', blank=True)
@@ -44,10 +45,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField('last name', max_length=30, blank=True)
     is_active = models.BooleanField('active', default=True)
     is_staff = models.BooleanField('staff', default=True)
+    otp_attempt_time = models.DateTimeField(blank=True, null=True)
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'primary_email'
+    USERNAME_FIELD = 'mobile'
     REQUIRED_FIELDS = []
 
     class Meta:
@@ -62,8 +64,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class MobileOtp(models.Model):
-    mobile = models.CharField(max_length=20)
     otp = models.CharField(max_length=6)
     user = models.ForeignKey(User, related_name='otp', on_delete=models.CASCADE)
     count = models.IntegerField(default=0)
-    created_at = models.DateTimeField(default=datetime.now())
+    created_at = models.DateTimeField(default=timezone.now())
