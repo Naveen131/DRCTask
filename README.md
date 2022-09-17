@@ -17,7 +17,7 @@ Please follow below steps:-
 5 Run following api's
    
   1. http://127.0.0.0.1:8000/api/v1/add-user 
-    payload: {
+    payload= {
     "first_name":"Naveen",
     "last_name":"Chaudhary",
     "primary_email":"deepak@gmail.com",
@@ -30,10 +30,9 @@ Please follow below steps:-
   2.  API to send otp to mobile
      url :- http:// 127.0.0.1/api/v1/send-otp
      payload =
-              {"mobile":"8130481915"
-    
-      }
-  response:- {
+              {"mobile":"8130481915"}
+              
+  response= {
     "status": true,
     "code": 200,
     "message": "Success",
@@ -65,7 +64,7 @@ Please follow below steps:-
 }
 }
 
-   4. 
+   
      
    
 
