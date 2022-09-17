@@ -159,8 +159,7 @@ class VerifyOtpserializer(serializers.ModelSerializer):
                 user_obj.save()
                 raise ValidationError("OTP maximum amount attempt reached, "
                                       "user blocked for 5 minutes")
-
-            if time_diff.seconds/60 > 5:
+            if int(time_diff.seconds/60) > 5:
                 raise ValidationError("OTP Expired")
 
             if attrs['otp'] != otp.otp:
