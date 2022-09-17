@@ -16,7 +16,8 @@ Please follow below steps:-
 
 5 Run following api's
    
-  1. http://127.0.0.0.1:8000/api/v1/add-user 
+  1. API to register user 
+     url = http://127.0.0.0.1:8000/api/v1/add-user 
     payload= {
     "first_name":"Naveen",
     "last_name":"Chaudhary",
